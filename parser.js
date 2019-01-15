@@ -9,6 +9,7 @@ const zipUrl = 'https://www.ceskaposta.cz/documents/10180/3738087/csv_prehled_sc
 
 async function updateDB (useLocal, path) {
     console.log('Starting the job...');
+    var total = 0;
     var errors = 0;
     var inserts = 0;
     var updates = 0;
@@ -37,6 +38,7 @@ async function updateDB (useLocal, path) {
         stream =  fs.createReadStream(path);
     }
 
+    return await new Promise(function(resolve) {
     stream.pipe(iconv.decodeStream('win1250')).pipe(csv(
         {
             headers: true,
@@ -47,6 +49,10 @@ async function updateDB (useLocal, path) {
     .transform(function(data,next){
         // do all the work in the transform so we can run the code synchronously using next callback
         var id = data.psc.toString() + data.cis_schranky.toString();
+        total+=1;
+        if(total % 1000 == 0) {
+            console.log(`Processed ${total} items.`);
+        }
         db.get(id).then(e => {
             //console.dir(e);
             if(e) {
@@ -73,11 +79,11 @@ async function updateDB (useLocal, path) {
                 
             } else {
                 u=false;
-                console.log(`Item ${id} unchanged.`);
+                //console.log(`Item ${id} unchanged.`);
             }
             qd = db.prepareQueryDef('updated', start, qd);
             db.update(id, qd)
-                    .then(data => { console.log(`Item ${id} updated.`); if (u) updates++; else unchanged++; next(); })
+                    .then(data => { /*console.log(`Item ${id} updated.`);*/ if (u) updates++; else unchanged++; next(); })
                     .catch(err => { console.log(`Item ${id} rejected: ${err}`); errors++; next(); })
 
         } else {
@@ -102,10 +108,10 @@ async function updateDB (useLocal, path) {
         var output = `Successfull inserts: ${inserts}, Successfull updates: ${updates}, Errors: ${errors}, Successful deletions: ${dcount}, Deletion errors: ${derr}, Unchanged: ${unchanged}`;
         console.log(output);
         console.log('Job finished.');
-        return output;
-        
+        //return output;
+        resolve(output);  
     });
-
+    });
 } 
 
 module.exports = {

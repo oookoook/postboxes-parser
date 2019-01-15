@@ -1,0 +1,7 @@
+{
+  "lambda": {
+    "role": "postboxes-parser-executor",
+    "name": "postboxes-parser",
+    "region": "eu-central-1"
+  }
+}
