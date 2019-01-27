@@ -33,15 +33,8 @@ function get(id) {
     })
 };
 
-function add (id, time, item) {
+function add (id, coords, item, time) {
     return new Promise(function(resolve, reject) {
-        var coords = {lat:0, lon:0};
-        if(item.sour_x && item.sour_y) { 
-            coords = gc.convert(parseFloat(item.sour_x), parseFloat(item.sour_y), 0);
-        } else {
-            reject('No coordinates provided');
-            return;
-        }
         
         // remove the empty strings in the info object
         for(var prop in item) {
@@ -73,27 +66,33 @@ function add (id, time, item) {
 
 function findRemoved (start) {
     return new Promise(function(resolve, reject) {
-        docClient.scan({
-                // params
-                TableName : table,
-                ProjectionExpression:'id',
-                FilterExpression: "updated < :time",
-                ExpressionAttributeValues: {
-                    ":time": start
-                }
+        var ids = [];
+        var params = {
+            TableName : table,
+            ProjectionExpression:'id',
+            FilterExpression: 'updated < :time',
+            ExpressionAttributeValues: {
+                ':time': start
             }
-            , function(err, data) {
-                if(err) {
-                    console.log(err);
-                    resolve(false);
-                }
-                var ids = [];
-                data.Items.forEach(function(item) {
-                    ids.push(item.id);
-                });
+        };
 
-                resolve(ids);
+        const onScan = function(err, data) {
+            if(err) {
+                console.log(err);
+                resolve(false);
+            }
+            
+            data.Items.forEach(function(item) {
+                ids.push(item.id);
             });
+            if (typeof data.LastEvaluatedKey != 'undefined') {
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+                docClient.scan(params, onScan);
+            } else {
+                resolve(ids);
+            }
+        }
+        docClient.scan(params, onScan);
     });
 }
 
@@ -127,7 +126,7 @@ function update(id, qd) {
             },
             UpdateExpression: 'set ' + qd.updates.join(','),
             ExpressionAttributeValues: qd.attrVals,
-            ReturnValues:"UPDATED_NEW"
+            ReturnValues:'UPDATED_NEW'
         },  function(err, data) {
                 if (err) {
                     reject(err);

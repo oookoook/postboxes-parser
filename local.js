@@ -18,5 +18,6 @@ const parser = require('./parser');
     if(process.argv[3]) {
         path = process.argv[3]; 
     }
+
     await parser.updateDB(!download, path);
 })();
