@@ -1,0 +1,4 @@
+{
+    "instructions": "run this command to schedule the parser to run periodically once at a beginning of a month",
+    "command": "claudia add-scheduled-event --name parse  --event cron-event.json --schedule \"cron(0 0 3 * ? *)\""
+}
