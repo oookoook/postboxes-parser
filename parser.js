@@ -29,6 +29,12 @@ function updateItem(data, progress) {
             //console.dir(e);
             if(e) {
             var qd = null;
+            if(!(data.sour_x && data.sour_y)) {
+                // if coords were removed do nothing - this deletes the record as the updated atribute is not refreshed
+                console.log(`Existing item ${id} has corrds removed - marked for deletion`);
+                resolve();
+                return;
+            }
             var coords = gc.convert(parseFloat(data.sour_x), parseFloat(data.sour_y), 0);
             if(e.lat != coords.lat) {
                 qd = db.prepareQueryDef('lat', coords.lat, qd);
@@ -37,20 +43,30 @@ function updateItem(data, progress) {
                 qd = db.prepareQueryDef('lon', coords.lon, qd);
             }
             //[ ['psc','zip'], ['zkrnaz_posty','office'], ['cis_schranky', 'no'],['adresa', 'address'],['sour_x', 'x'],['sour_y','y'],'misto_popis','cast_obce','obec','okres','cas','omezeni'].forEach(function(i) {
+            try {
             [ 'psc', 'zkrnaz_posty',, 'cis_schranky','adresa','sour_x','sour_y','misto_popis','cast_obce','obec','okres' ].forEach(function(i) {
-                if(data[i] && e.info[i] != data[i]) {
+                if(data[i] && (!e.info || e.info[i] != data[i])) {
                    console.log(`Difference: ${id} ${i} ${e.info[i]} ${data[i]}`)
                   qd = db.prepareQueryDef(`info.${i}`, data[i], qd);
                 }
             });
+            // TODO remove also invalid old values (this code only add new ones)
             [ 'cas','omezeni' ].forEach(function(i) {
-                if(data[i] && e.info[i].indexOf(data[i]) == -1) {
+                if(data[i] && (!e.info || e.info[i].indexOf(data[i]) == -1)) {
                     console.log(`Difference: ${id} ${i} ${e.info[i]} ${data[i]}`)
                     qd = db.prepareQueryDef(`info.${i}`, e.info[i]+';'+data[i], qd);
                 }
             });
+            } catch(ex) {
+                console.log(ex);
+                console.dir(e);
+                console.dir(data);
+                resolve();
+                return;
+            }
             // update record
             var u = true;
+            
             if(qd) {
                 qd = db.prepareQueryDef('changed', progress.start, qd);
                 console.log(`Updating existing item ${id}`);
@@ -131,6 +147,7 @@ async function updateDB (useLocal, path) {
         {
             headers: true,
             delimiter: ';',
+            quote: null
 
         }
     ))
