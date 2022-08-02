@@ -2,28 +2,28 @@
 
 <https://docs.aws.amazon.com/AmazonECS/latest/userguide/docker-basics.html>
 
-Replace the 
+Replace the `aws_account_id` and `region` with the actial account ID and region.
 
 ```cmd
-docker build -t postobxes-parser .
+docker build -t postboxes-parser .
 
-docker tag postboxes-parser aws_account_id.dkr.ecr.region.amazonaws.com/postboxes-parser
+docker tag postboxes-parser <aws_account_id>.dkr.ecr.<region>.amazonaws.com/postboxes-parser
 ```
 
 Then:
 
 ```cmd
-aws ecr get-login-password | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.region.amazonaws.com
+aws ecr get-login-password | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
 ```
 
-I don't have the AWS in Windows, so I have to run the first part `aws ecr get-login-password` in Ubuntu and then copy and paste to the Windows to login docker:
+~~I don't have the AWS in Windows, so I have to run the first part `aws ecr get-login-password` in Ubuntu and then copy and paste to the Windows to login docker:~~
 
 ```cmd
-echo "password" | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.region.amazonaws.com/postboxes-parser
+echo "password" | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com/postboxes-parser
 ```
 
 And the last step:
 
 ```cmd
-docker push aws_account_id.dkr.ecr.region.amazonaws.com/postboxes-parser
+docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/postboxes-parser
 ```
