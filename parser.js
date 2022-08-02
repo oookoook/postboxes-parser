@@ -16,7 +16,7 @@ const gc = require('./sjtsk-converter');
 const db = require('./db-service');
 const zipUrl = 'https://www.ceskaposta.cz/documents/10180/3738087/csv_prehled_schranek.zip';
 
-const queue = new cwait.TaskQueue(Promise, 10);
+const queue = new cwait.TaskQueue(Promise, 100);
 
 function updateItem(data, progress) {
     return new Promise(function (resolve, reject) {
@@ -44,7 +44,7 @@ function updateItem(data, progress) {
             }
             //[ ['psc','zip'], ['zkrnaz_posty','office'], ['cis_schranky', 'no'],['adresa', 'address'],['sour_x', 'x'],['sour_y','y'],'misto_popis','cast_obce','obec','okres','cas','omezeni'].forEach(function(i) {
             try {
-            [ 'psc', 'zkrnaz_posty',, 'cis_schranky','adresa','sour_x','sour_y','misto_popis','cast_obce','obec','okres' ].forEach(function(i) {
+            [ 'psc', 'zkrnaz_posty', 'cis_schranky','adresa','sour_x','sour_y','misto_popis','cast_obce','obec','okres' ].forEach(function(i) {
                 if(data[i] && (!e.info || e.info[i] != data[i])) {
                    console.log(`Difference: ${id} ${i} ${e.info[i]} ${data[i]}`)
                   qd = db.prepareQueryDef(`info.${i}`, data[i], qd);
@@ -147,12 +147,17 @@ async function updateDB (useLocal, path) {
         {
             headers: true,
             delimiter: ';',
-            quote: null
+            quote: null,
+            discardUnmappedColumns: true
 
         }
     ))
     .on("data", function(data){
         checks.push(qui(data, progress));
+    })
+    .on("error", function(data) {
+        console.log('handling error', x, y, data);
+        return false;
     })
     .on("end", async function(){
         // this resolves when all the records are processed from the csv and added to the checks array
